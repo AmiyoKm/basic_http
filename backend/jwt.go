@@ -89,7 +89,7 @@ func (j *JWT) ToString() (string, error) {
 }
 
 func (j *JWT) Verify(jwtStr string, secret string) (*JWTPayload, error) {
-	parts := strings.Split(jwtStr, ",")
+	parts := strings.Split(jwtStr, ".")
 	if len(parts) != 3 {
 		return nil, ErrInvalidJWT
 	}

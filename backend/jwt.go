@@ -19,7 +19,7 @@ var ErrInvalidEncoding = errors.New("invalid payload encoding")
 type JWT struct {
 	Header  JWTHeader
 	Payload JWTPayload
-	Hash    []byte
+	Signature    []byte
 }
 
 type JWTHeader struct {
@@ -77,12 +77,12 @@ func NewJWT(userID string, secret string) (*JWT, error) {
 	return &JWT{
 		Header:  h,
 		Payload: payload,
-		Hash:    hashed,
+		Signature:    hashed,
 	}, nil
 }
 
 func (j *JWT) ToString() (string, error) {
-	encodedSignature := base64UrlEncode(j.Hash)
+	encodedSignature := base64UrlEncode(j.Signature)
 
 	finalJWT := j.Header.encoded + "." + j.Payload.encoded + "." + encodedSignature
 	return finalJWT, nil

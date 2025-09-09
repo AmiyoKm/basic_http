@@ -24,10 +24,10 @@ func main() {
 
 	mux.HandleFunc("GET /api/health-check", healthCheck)
 
-	mux.Handle("GET /api/products", manager.With(http.HandlerFunc(getProducts)))
-	mux.HandleFunc("POST /api/products", createProduct)
-	mux.HandleFunc("PUT /api/products/{id}", updateProduct)
-	mux.HandleFunc("DELETE /api/products/{id}", deleteProduct)
+	mux.Handle("GET /api/products", manager.With(http.HandlerFunc(getProducts), authentication))
+	mux.Handle("POST /api/products", manager.With(http.HandlerFunc(createProduct), authentication))
+	mux.Handle("PUT /api/products/{id}", manager.With(http.HandlerFunc(updateProduct), authentication))
+	mux.Handle("DELETE /api/products/{id}", manager.With(http.HandlerFunc(deleteProduct), authentication))
 	mux.HandleFunc("POST /api/users", createUser)
 
 	server := http.Server{

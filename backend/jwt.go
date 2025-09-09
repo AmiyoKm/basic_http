@@ -88,7 +88,7 @@ func (j *JWT) ToString() (string, error) {
 	return finalJWT, nil
 }
 
-func (j *JWT) Verify(jwtStr string, secret string) (*JWTPayload, error) {
+func JWTVerify(jwtStr string, secret string) (*JWTPayload, error) {
 	parts := strings.Split(jwtStr, ".")
 	if len(parts) != 3 {
 		return nil, ErrInvalidJWT

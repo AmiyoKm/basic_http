@@ -64,7 +64,7 @@ func getProducts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, products)
+	writeJSON(w, envelop{Message: "success", Value: products})
 }
 
 func createProduct(w http.ResponseWriter, r *http.Request) {

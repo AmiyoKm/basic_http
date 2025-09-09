@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -35,18 +37,32 @@ func logger(next http.Handler) http.Handler {
 	})
 }
 
-func mid1(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("i am middleware 1 that was supposed to run first")
-		next.ServeHTTP(w, r)
-		log.Println("i am middleware 1 that was supposed to run first , while returning")
-	})
-}
+type contextKey string
 
-func mid2(next http.Handler) http.Handler {
+func authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("i am middleware 2 that was supposed to run first")
-		next.ServeHTTP(w, r)
-		log.Println("i am middleware 2 that was supposed to run first , while returning")
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "no auth header found", http.StatusUnauthorized)
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			http.Error(w, "malformed auth header", http.StatusUnauthorized)
+			return
+		}
+
+		accessToken := parts[1]
+
+		jwtPayload, err := JWTVerify(accessToken, SECRET)
+		if err != nil {
+			http.Error(w, "invalid jwt payload", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), contextKey("userID"), jwtPayload.Sub)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

@@ -18,8 +18,9 @@ func (m *Manager) Use(middlewares ...Middleware) {
 
 func (m *Manager) With(next http.Handler, middlewares ...Middleware) http.Handler {
 
-	for _, middleware := range middlewares {
-		next = middleware(next)
+
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		next = middlewares[i](next)
 	}
 
 	for _, middleware := range m.middlewares {

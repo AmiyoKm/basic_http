@@ -1,4 +1,4 @@
-package main
+package jwt
 
 import (
 	"crypto/hmac"
@@ -17,9 +17,9 @@ var ErrInvalidSignature = errors.New("invalid signature")
 var ErrInvalidEncoding = errors.New("invalid payload encoding")
 
 type JWT struct {
-	Header  JWTHeader
-	Payload JWTPayload
-	Signature    []byte
+	Header    JWTHeader
+	Payload   JWTPayload
+	Signature []byte
 }
 
 type JWTHeader struct {
@@ -75,9 +75,9 @@ func NewJWT(userID string, secret string) (*JWT, error) {
 	hashed := hmacHash.Sum(nil)
 
 	return &JWT{
-		Header:  h,
-		Payload: payload,
-		Signature:    hashed,
+		Header:    h,
+		Payload:   payload,
+		Signature: hashed,
 	}, nil
 }
 

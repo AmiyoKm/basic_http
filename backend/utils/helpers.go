@@ -1,10 +1,15 @@
-package main
+package utils
 
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 )
+
+type Envelop struct {
+	Message string `json:"message"`
+	Value   any    `json:"value"`
+}
 
 func CORSHeader(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -13,7 +18,7 @@ func CORSHeader(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Headers", "amiyo, Content-Type")
 }
 
-func writeJSON(w http.ResponseWriter, value any) {
+func WriteJSON(w http.ResponseWriter, value any) {
 
 	encoder := json.NewEncoder(w)
 	err := encoder.Encode(value)
@@ -22,7 +27,7 @@ func writeJSON(w http.ResponseWriter, value any) {
 	}
 }
 
-func readJSON(r *http.Request, value any) {
+func ReadJSON(r *http.Request, value any) {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(value)
 	if err != nil {

@@ -3,38 +3,50 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/AmiyoKm/basic_http/config"
+	"github.com/AmiyoKm/basic_http/infra"
+	"github.com/AmiyoKm/basic_http/middleware"
+	"github.com/AmiyoKm/basic_http/repo"
+	productHandler "github.com/AmiyoKm/basic_http/rest/product"
+	userHandler "github.com/AmiyoKm/basic_http/rest/user"
+	productService "github.com/AmiyoKm/basic_http/service/product"
+	userService "github.com/AmiyoKm/basic_http/service/user"
 )
 
-const SECRET = "very-secret-stuff"
-
-var addr string = ":8080"
-
-var productStorage *ProductStorage
-var userStorage []User
-
 func main() {
-	db := initDB()
-	defer db.Close()
-	log.Printf("database connection established, dsn: %s", DB_DSN)
+	cfg := config.NewConfig()
 
-	productStorage = NewProductStorage(db)
+	db, err := infra.InitDB(cfg.DbConfig)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	userRepo := repo.NewUserRepo(db)
+	productRepo := repo.NewProductRepo(db)
+
+	userService := userService.NewService(userRepo)
+	productService := productService.NewService(productRepo)
+
+	uHandler := userHandler.NewHandler(cfg, userService)
+	pHandler := productHandler.NewHandler(cfg, productService)
 
 	mux := http.NewServeMux()
-	manager := NewManager()
+	manager := middleware.NewManager(cfg)
+	manager.Use(manager.CorsMiddleware, manager.Logger)
 
-	mux.HandleFunc("GET /api/health-check", healthCheck)
-
-	mux.Handle("GET /api/products", manager.With(http.HandlerFunc(getProducts), authentication))
-	mux.Handle("POST /api/products", manager.With(http.HandlerFunc(createProduct), authentication))
-	mux.Handle("PUT /api/products/{id}", manager.With(http.HandlerFunc(updateProduct), authentication))
-	mux.Handle("DELETE /api/products/{id}", manager.With(http.HandlerFunc(deleteProduct), authentication))
-	mux.HandleFunc("POST /api/users", createUser)
+	uHandler.HttpRoutes(mux, manager)
+	pHandler.HttpRoutes(mux, manager)
 
 	server := http.Server{
-		Addr:    addr,
-		Handler: logger(corsMiddleware(mux)),
+		Addr:    cfg.Addr,
+		Handler: mux,
 	}
+
 	if err := server.ListenAndServe(); err != nil {
-		log.Println("something went wrong", err)
+		log.Fatal(err)
+		os.Exit(1)
 	}
 }

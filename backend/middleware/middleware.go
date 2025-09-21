@@ -1,4 +1,4 @@
-package main
+package middleware
 
 import (
 	"context"
@@ -7,13 +7,16 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/AmiyoKm/basic_http/jwt"
+	"github.com/AmiyoKm/basic_http/utils"
 )
 
 type Middleware func(http.Handler) http.Handler
 
-func corsMiddleware(next http.Handler) http.Handler {
+func (m *Manager) CorsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		CORSHeader(w)
+		utils.CORSHeader(w)
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -22,7 +25,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func logger(next http.Handler) http.Handler {
+func (m *Manager) Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		curr := time.Now()
 		method := r.Method
@@ -37,9 +40,7 @@ func logger(next http.Handler) http.Handler {
 	})
 }
 
-type contextKey string
-
-func authentication(next http.Handler) http.Handler {
+func (m *Manager) Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
@@ -55,13 +56,13 @@ func authentication(next http.Handler) http.Handler {
 
 		accessToken := parts[1]
 
-		jwtPayload, err := JWTVerify(accessToken, SECRET)
+		jwtPayload, err := jwt.JWTVerify(accessToken, m.cfg.JWTSecretKey)
 		if err != nil {
 			http.Error(w, "invalid jwt payload", http.StatusUnauthorized)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), contextKey("userID"), jwtPayload.Sub)
+		ctx := context.WithValue(r.Context(), UserIDKey, jwtPayload.Sub)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

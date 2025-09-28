@@ -11,8 +11,12 @@ func NewService(repo ProductRepo) Service {
 		repo: repo,
 	}
 }
-func (s *service) Get() ([]*domain.Product, error) {
-	return s.repo.Get()
+func (s *service) Get(page, limit int) ([]*domain.Product, error) {
+	return s.repo.Get(page, limit)
+}
+
+func (s *service) Count() (int, error) {
+	return s.repo.Count()
 }
 
 func (s *service) Create(product *domain.Product) error {

@@ -21,13 +21,14 @@ func NewProductRepo(db *sql.DB) ProductRepo {
 		db: db,
 	}
 }
-
-func (r *productRepo) Get() ([]*domain.Product, error) {
+func (r *productRepo) Get(page, limit int) ([]*domain.Product, error) {
 	query := `
 		SELECT id, name, description, image_url, price
-		FROM products;
+		FROM products OFFSET $1 LIMIT $2;
 	`
-	rows, err := r.db.Query(query)
+	offset := (page - 1) * limit
+
+	rows, err := r.db.Query(query, offset, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -56,6 +57,19 @@ func (r *productRepo) Get() ([]*domain.Product, error) {
 	}
 
 	return products, nil
+}
+
+func (r *productRepo) Count() (int, error) {
+	query := `SELECT COUNT(*) FROM products`
+
+	var cnt int
+	err := r.db.QueryRow(query).Scan(&cnt)
+	if err != nil {
+		return 0, err
+	}
+
+	return cnt, nil
+
 }
 
 func (r *productRepo) Create(product *domain.Product) error {

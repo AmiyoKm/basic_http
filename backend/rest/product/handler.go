@@ -1,8 +1,10 @@
 package product
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/AmiyoKm/basic_http/config"
 	"github.com/AmiyoKm/basic_http/domain"
@@ -33,15 +35,53 @@ func (h *Handler) getProductByID(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, utils.Envelop{Message: "product created", Value: product})
 }
 
+type pagination struct {
+	Data     []*domain.Product `json:"data"`
+	Metadata Metadata          `json:"metadata"`
+}
+
+type Metadata struct {
+	Page       int `json:"page"`
+	Limit      int `json:"limit"`
+	TotalItems int `json:"total_items"`
+	TotalPages int `json:"total_pages"`
+}
+
 func (h *Handler) getProducts(w http.ResponseWriter, r *http.Request) {
-	products, err := h.svc.Get()
+	query := r.URL.Query()
+	pageStr := query.Get("page")
+	limitStr := query.Get("limit")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || pageStr == "" {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limitStr == "" {
+		limit = 10
+	}
+
+	products, err := h.svc.Get(page, limit)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	utils.WriteJSON(w, utils.Envelop{Message: "success", Value: products})
+	cnt, err := h.svc.Count()
+
+	pagination := pagination{
+		Data: products,
+		Metadata: Metadata{
+			Page:       page,
+			Limit:      limit,
+			TotalItems: cnt,
+			TotalPages: (cnt / limit) + 1,
+		},
+	}
+
+	utils.WriteJSON(w, utils.Envelop{Message: "success", Value: pagination})
 }
 
 func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {

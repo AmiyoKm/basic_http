@@ -10,7 +10,8 @@ type Service interface {
 }
 
 type ProductRepo interface {
-	Get() ([]*domain.Product, error)
+	Get(page, limit int) ([]*domain.Product, error)
+	Count() (int, error)
 	GetByID(id string) (*domain.Product, error)
 	Create(product *domain.Product) error
 	Update(product *domain.Product) error
